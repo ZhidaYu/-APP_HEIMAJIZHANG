@@ -119,7 +119,7 @@
 
 ```bash
 # 1. 克隆仓库
-git clone git@github.com:ZhidaYu/-APP_DADAJIZHANG.git
+git clone git@github.com:ZhidaYu/-APP_HEIMAJIZHANG.git
 cd 黑马记账\ APP
 
 # 2. 激活 conda 环境（如果使用 Conda）
