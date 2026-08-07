@@ -230,8 +230,8 @@ export function getSubCategory(
 }
 
 /** 获取分类的完整显示文字（如 "餐饮饮食 > 外卖外送"） */
-export function getCategoryDisplay(primaryKey: string, subKey: string): string {
-  // 直接在支出和收入分类中查找，避免模块级变量依赖
+export function getCategoryDisplay(primaryKey: string, subKey: string, userCategories?: UserCategory[]): string {
+  // 先查预设分类
   for (const cat of PRIMARY_CATEGORIES) {
     if (cat.key === primaryKey) {
       const sub = cat.children.find(s => s.key === subKey)
@@ -242,6 +242,14 @@ export function getCategoryDisplay(primaryKey: string, subKey: string): string {
     if (cat.key === primaryKey) {
       const sub = cat.children.find(s => s.key === subKey)
       return sub ? `${cat.label} > ${sub.label}` : cat.label
+    }
+  }
+  // 再查用户自定义分类
+  if (userCategories && userCategories.length > 0) {
+    const userPrimary = userCategories.find(c => c.key === primaryKey && c.parentKey === null)
+    if (userPrimary) {
+      const userSub = userCategories.find(c => c.key === subKey && c.parentKey === primaryKey)
+      return userSub ? `${userPrimary.label} > ${userSub.label}` : userPrimary.label
     }
   }
   console.warn('[categories] 未找到分类:', primaryKey, subKey)

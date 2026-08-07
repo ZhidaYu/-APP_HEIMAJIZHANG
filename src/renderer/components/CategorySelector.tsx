@@ -29,7 +29,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
   const handlePrimaryClick = (category: PrimaryCategory) => {
     onPrimaryChange(category.key)
-    onSecondaryChange(category.children[0].key)
+    // 有子分类时自动选第一个，没有则传空字符串（用户需手动选小类）
+    onSecondaryChange(category.children[0]?.key || '')
   }
 
   return (

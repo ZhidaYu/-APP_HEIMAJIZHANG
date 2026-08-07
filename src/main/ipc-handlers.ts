@@ -44,7 +44,7 @@ export function registerIpcHandlers(): void {
 
   // 获取月度总支出
   ipcMain.handle('expense:getMonthTotal', async (_event, year: number, month: number): Promise<number> => {
-    return getMonthTotal(year, month)
+    return getMonthTotal(year, month, 'expense')
   })
 
   // 清空所有记录
@@ -157,12 +157,13 @@ function generateCsv(records: ExpenseRecord[]): string {
   // CSV 表头
   const headers = ['类型', '日期', '金额（元）', '一级分类', '二级分类', '分类', '支付方式', '备注']
 
+  const userCats = getUserCategories()
   // 数据行
   const rows = records.map(r => {
     const typeLabel = r.type === 'income' ? '收入' : '支出'
     const amount = (r.type === 'income' ? '+' : '-') + (r.amount / 100).toFixed(2)
-    const primary = getCategoryDisplay(r.primaryCategory, r.secondaryCategory).split(' > ')[0] || ''
-    const secondary = getCategoryDisplay(r.primaryCategory, r.secondaryCategory).split(' > ')[1] || ''
+    const primary = getCategoryDisplay(r.primaryCategory, r.secondaryCategory, userCats).split(' > ')[0] || ''
+    const secondary = getCategoryDisplay(r.primaryCategory, r.secondaryCategory, userCats).split(' > ')[1] || ''
     const category = `${primary} > ${secondary}`
     const payment = paymentLabel(r.paymentMethod)
     // CSV 转义
@@ -258,7 +259,7 @@ function parseCsv(content: string): CreateExpenseInput[] {
       if (!cat) continue
     }
 
-    const secKey = secondaryKey || (allCats.find(c => c.key === primaryKey)?.children[0].key)
+    const secKey = secondaryKey || (allCats.find(c => c.key === primaryKey)?.children[0]?.key)
     if (!secKey) continue
 
     records.push({
@@ -302,16 +303,15 @@ function buildKeyMap(): Record<string, string> {
   for (const cat of [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES]) {
     map[cat.label] = cat.key
   }
-  // 用户自定义分类（只在有数据库连接时）
+  // 用户自定义分类
   try {
-    const { getUserCategories } = require('./database')
     const userCats = getUserCategories()
     for (const uc of userCats) {
       if (uc.parentKey === null) {
         map[uc.label] = uc.key
       }
     }
-  } catch { /* 忽略 */ }
+  } catch { /* 数据库未初始化时忽略 */ }
   return map
 }
 
@@ -319,9 +319,8 @@ function buildKeyMap(): Record<string, string> {
 function findSecondaryKey(primaryKey: string, secondaryLabel: string): string | undefined {
   // 先查预置分类
   let allCats = [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES]
-  // 合并用户一级分类（只在有数据库连接时）
+  // 合并用户分类
   try {
-    const { getUserCategories } = require('./database')
     const userCats = getUserCategories()
     const userPrimaries = userCats.filter((c: any) => c.parentKey === null)
     allCats = [...allCats, ...userPrimaries.map((c: any) => ({ key: c.key, label: c.label, children: [] }))]
@@ -333,7 +332,7 @@ function findSecondaryKey(primaryKey: string, secondaryLabel: string): string | 
         .find((s: any) => s.label === secondaryLabel)
       if (sub) return sub.key
     }
-  } catch { /* 忽略 */ }
+  } catch { /* 数据库未初始化时忽略 */ }
 
   const cat = allCats.find(c => c.key === primaryKey)
   if (!cat) return undefined

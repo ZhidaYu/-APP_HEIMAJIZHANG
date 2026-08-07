@@ -176,7 +176,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
         {userPrimaries.map(cat => {
           const subCats = userCats.filter(c => c.parentKey === cat.key)
           return renderPrimaryCard(
-            { key: cat.key, label: cat.label, icon: cat.icon, children: [] } as any,
+            { key: cat.key, label: cat.label, icon: cat.icon, children: [], id: cat.id, type: cat.type } as any,
             false, type, subCats
           )
         })}
@@ -234,7 +234,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
               <div className="cm-form-row">
                 <label className="cm-form-label">所属一级分类</label>
                 <div className="cm-parent-display">
-                  {getParentName(formType, formParentKey)}
+                  {getParentName(formType, formParentKey, expenseUserCats, incomeUserCats)}
                 </div>
               </div>
             )}
@@ -298,12 +298,16 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
   )
 }
 
-/** 根据类型和 key 查找父分类名称 */
-function getParentName(type: RecordType, parentKey: string): string {
+/** 根据类型和 key 查找父分类名称（含用户自定义分类） */
+function getParentName(type: RecordType, parentKey: string, expenseUserCats: UserCategory[], incomeUserCats: UserCategory[]): string {
   const allPresets = type === 'expense' ? PRIMARY_CATEGORIES : INCOME_CATEGORIES
   const found = allPresets.find(c => c.key === parentKey)
   if (found) return `${found.icon} ${found.label}`
-  return parentKey // fallback: 显示 key（用户自建一级分类）
+  // 查找用户自定义一级分类
+  const userCats = type === 'expense' ? expenseUserCats : incomeUserCats
+  const userFound = userCats.find(c => c.key === parentKey && c.parentKey === null)
+  if (userFound) return `${userFound.icon} ${userFound.label}`
+  return parentKey
 }
 
 export default CategoryManager

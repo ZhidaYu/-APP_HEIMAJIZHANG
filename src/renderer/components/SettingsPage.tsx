@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Download, Upload, Trash2, Info, FolderCog } from 'lucide-react'
+import { Download, Upload, Trash2, Info, FolderCog, Gamepad2 } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
 import CategoryManager from './CategoryManager'
+import SnakeGame from './SnakeGame'
 import type { UserCategory, CreateUserCategoryInput, UpdateUserCategoryInput } from '../../shared/types'
 
 interface SettingsPageProps {
@@ -18,6 +19,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh, use
   const [msg, setMsg] = useState<string | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [showCategoryManager, setShowCategoryManager] = useState(false)
+  const [showSnakeGame, setShowSnakeGame] = useState(false)
 
   const showMsg = (text: string) => { setMsg(text); setTimeout(() => setMsg(null), 4000) }
 
@@ -79,6 +81,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh, use
       </div>
 
       <div className="settings-section">
+        <h4 className="section-title-sm">🎮 休闲娱乐</h4>
+        <div className="settings-card">
+          <button className="setting-action" onClick={() => setShowSnakeGame(true)}>
+            <span className="action-icon" style={{ backgroundColor: '#ECFDF5' }}><Gamepad2 size={20} strokeWidth={1.5} /></span>
+            <div className="action-text"><span className="action-title">贪吃蛇</span><span className="action-desc">经典小游戏，工作累了来一局</span></div>
+            <span className="action-arrow">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="settings-section">
         <h4 className="section-title-sm">⚠️ 危险操作</h4>
         <div className="settings-card">
           <button className="setting-action danger" onClick={() => setShowClearConfirm(true)}>
@@ -108,6 +121,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh, use
             />
           </div>
         </div>
+      )}
+
+      {showSnakeGame && (
+        <SnakeGame onClose={() => setShowSnakeGame(false)} />
       )}
     </div>
   )

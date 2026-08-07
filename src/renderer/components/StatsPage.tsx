@@ -139,7 +139,7 @@ const StatsPage: React.FC<StatsPageProps> = ({ records, formatAmount, userCatego
                       <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} stroke="#fff" strokeWidth={2} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatAmount(value * 100)} />
+                  <Tooltip formatter={(value: number) => formatAmount(value)} />
                   <Legend
                     layout="horizontal"
                     verticalAlign="bottom"

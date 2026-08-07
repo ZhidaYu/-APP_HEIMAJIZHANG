@@ -163,10 +163,11 @@ export function getUserCategories(): UserCategory[] {
 /** 新增用户分类 */
 export function addUserCategory(input: CreateUserCategoryInput): UserCategory {
   const db = getDatabase()
-  const id = `user_${Date.now().toString(36)}`
+  const ts = Date.now().toString(36)
+  const id = `user_${ts}`
   const key = input.parentKey
-    ? `user_sub_${Date.now().toString(36)}`
-    : `user_${Date.now().toString(36)}`
+    ? `user_sub_${ts}`
+    : `user_${ts}`
   const now = new Date().toISOString()
   const icon = input.icon || '📋'
 

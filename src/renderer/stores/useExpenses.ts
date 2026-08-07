@@ -99,10 +99,10 @@ export function useExpenses() {
     try {
       return await window.electronAPI.getMonthTotal(year, month)
     } catch {
-      // 降级：本地计算
+      // 降级：本地计算（只统计支出）
       const prefix = `${year}-${String(month).padStart(2, '0')}`
       return records
-        .filter(r => r.date.startsWith(prefix))
+        .filter(r => r.date.startsWith(prefix) && r.type !== 'income')
         .reduce((sum, r) => sum + r.amount, 0)
     }
   }, [records])
@@ -140,7 +140,14 @@ export function useExpenses() {
     try {
       const ok = await window.electronAPI.deleteUserCategory(id)
       if (ok) {
-        setUserCategories(prev => prev.filter(c => c.id !== id))
+        setUserCategories(prev => {
+          const target = prev.find(c => c.id === id)
+          if (target && !target.parentKey) {
+            // 一级分类：同时移除子分类（数据库已级联删除）
+            return prev.filter(c => c.id !== id && c.parentKey !== target.key)
+          }
+          return prev.filter(c => c.id !== id)
+        })
       }
       return ok
     } catch (err) {
