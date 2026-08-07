@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(conda run *)",
+      "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" run *)",
+      "Bash(rm -rf out)",
+      "Bash(timeout 15 \"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" run dev)",
+      "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" ls *)",
+      "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npx.cmd\" electron *)",
+      "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" install *)",
+      "Bash(echo \"const e = require\\('electron'\\); console.log\\('electron keys:', Object.keys\\(e\\).slice\\(0,10\\)\\); console.log\\('app:', typeof e.app\\); process.exit\\(0\\)\")",
+      "Bash(timeout 10 \"C:/Users/16214/.conda/envs/heima-accounting/npx.cmd\" electron test-main.js)",
+      "Bash(node -e \"console.log\\(require.resolve\\('electron'\\)\\)\")",
+      "Bash(timeout 10 \"./node_modules/electron/dist/electron.exe\" test-main.js)",
+      "Bash(echo \"const e = require\\('electron'\\); console.log\\('type:', typeof e\\); console.log\\('has app:', typeof e === 'object' && e !== null && 'app' in e\\); process.exit\\(0\\)\")",
+      "Bash(timeout 10 \"d:/bili_heima_vibecoding/黑马记账 APP/node_modules/electron/dist/electron.exe\" test-main.js)",
+      "Bash(echo \"console.log\\('ELECTRON_RUN_AS_NODE:', process.env.ELECTRON_RUN_AS_NODE\\); process.exit\\(0\\)\")",
+      "Bash(ELECTRON_RUN_AS_NODE= timeout 10 \"d:/bili_heima_vibecoding/黑马记账 APP/node_modules/electron/dist/electron.exe\" test-main.js)",
+      "Bash(mv node_modules/electron node_modules/electron.bak)",
+      "Bash(echo \"const e = require\\('electron'\\); console.log\\('type:', typeof e\\); console.log\\('keys:', Object.keys\\(e||{}\\).slice\\(0,5\\)\\); process.exit\\(0\\)\")",
+      "Bash(timeout 10 \"node_modules/electron.bak/dist/electron.exe\" test-main.js)",
+      "Bash(mv node_modules/electron.bak node_modules/electron)",
+      "Bash(rm -f test-main.js)",
+      "Bash(echo \"const e = require\\('electron'\\); console.log\\('type:', typeof e\\);\")",
+      "Bash(unset ELECTRON_RUN_AS_NODE)",
+      "Bash(node -e \"const p = require\\('electron-vite/package.json'\\); console.log\\('main:', p.main\\); console.log\\('exports:', JSON.stringify\\(p.exports, null, 2\\)\\);\")",
+      "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npx.cmd\" electron-rebuild *)",
+      "Bash(timeout 12 \"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" run dev)"
+    ]
+  }
+}

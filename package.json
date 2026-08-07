@@ -1,0 +1,81 @@
+{
+  "name": "heima-accounting",
+  "version": "1.0.0",
+  "description": "黑马记账 - 个人桌面记账应用",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "node scripts/build.js",
+    "preview": "node scripts/build.js --preview && electron-vite preview",
+    "package:win": "node scripts/build.js && electron-builder --win",
+    "package:mac": "node scripts/build.js && electron-builder --mac",
+    "package:all": "node scripts/build.js && electron-builder --win --mac",
+    "package:win-portable": "node scripts/build.js && electron-builder --win --config.win.target=portable"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "lucide-react": "^1.29.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3",
+    "electron-rebuild": "^3.2.9",
+    "electron-vite": "^3.1.0",
+    "typescript": "^7.0.2",
+    "vite": "^6.4.3"
+  },
+  "build": {
+    "appId": "com.heima.accounting",
+    "productName": "黑马记账",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "src/assets/icon.png"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "src/assets/icon.png",
+      "category": "public.app-category.finance"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052",
+      "unicode": true
+    }
+  }
+}
