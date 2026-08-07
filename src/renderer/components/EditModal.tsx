@@ -9,9 +9,11 @@ interface EditModalProps {
   onClose: () => void
   onSave: (id: string, data: UpdateExpenseInput) => void
   formatAmount: (cents: number) => string
+  /** 可选：获取合并后分类列表的函数 */
+  getCategories?: (type: import('../../shared/types').RecordType) => import('../../shared/types').PrimaryCategory[]
 }
 
-const EditModal: React.FC<EditModalProps> = ({ record, onClose, onSave, formatAmount }) => {
+const EditModal: React.FC<EditModalProps> = ({ record, onClose, onSave, formatAmount, getCategories }) => {
   const [recordType, setRecordType] = useState<RecordType>(record.type || 'expense')
   const [amountText, setAmountText] = useState('')
   const [primaryCategory, setPrimaryCategory] = useState(record.primaryCategory)
@@ -24,7 +26,7 @@ const EditModal: React.FC<EditModalProps> = ({ record, onClose, onSave, formatAm
 
   const handleTypeChange = (newType: RecordType) => {
     setRecordType(newType)
-    const cats = getCategoriesByType(newType)
+    const cats = getCategories ? getCategories(newType) : getCategoriesByType(newType)
     setPrimaryCategory(cats[0].key)
     setSecondaryCategory(cats[0].children[0].key)
   }
@@ -66,7 +68,7 @@ const EditModal: React.FC<EditModalProps> = ({ record, onClose, onSave, formatAm
               <input type="text" inputMode="decimal" className="amount-input" placeholder="0.00" value={amountText} onChange={handleAmountChange} autoFocus />
             </div>
           </div>
-          <CategorySelector recordType={recordType} primaryKey={primaryCategory} secondaryKey={secondaryCategory} onPrimaryChange={setPrimaryCategory} onSecondaryChange={setSecondaryCategory} />
+          <CategorySelector recordType={recordType} primaryKey={primaryCategory} secondaryKey={secondaryCategory} onPrimaryChange={setPrimaryCategory} onSecondaryChange={setSecondaryCategory} getCategories={getCategories} />
           <div className="form-row"><label className="form-label">📅 日期</label><input type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} max={getTodayStr()} /></div>
           <div className="form-row"><label className="form-label">💳 支付方式</label>
             <div className="payment-options">{PAYMENT_METHODS.map(pm => (

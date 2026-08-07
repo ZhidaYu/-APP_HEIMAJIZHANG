@@ -8,6 +8,8 @@ interface CategorySelectorProps {
   secondaryKey: string
   onPrimaryChange: (key: string) => void
   onSecondaryChange: (key: string) => void
+  /** 可选：获取合并后分类列表的函数，不传则只用预设 */
+  getCategories?: (type: RecordType) => PrimaryCategory[]
 }
 
 /**
@@ -19,9 +21,10 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   primaryKey,
   secondaryKey,
   onPrimaryChange,
-  onSecondaryChange
+  onSecondaryChange,
+  getCategories
 }) => {
-  const categories = getCategoriesByType(recordType)
+  const categories = getCategories ? getCategories(recordType) : getCategoriesByType(recordType)
   const selectedPrimary = categories.find(c => c.key === primaryKey)
 
   const handlePrimaryClick = (category: PrimaryCategory) => {

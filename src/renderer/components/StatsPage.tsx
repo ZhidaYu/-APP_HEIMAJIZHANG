@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react'
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import type { ExpenseRecord } from '../../shared/types'
-import { PRIMARY_CATEGORIES } from '../../shared/categories'
+import type { ExpenseRecord, UserCategory, PrimaryCategory } from '../../shared/types'
+import { PRIMARY_CATEGORIES, INCOME_CATEGORIES, mergeCategories } from '../../shared/categories'
 
 interface StatsPageProps {
   records: ExpenseRecord[]
   formatAmount: (cents: number) => string
+  userCategories?: UserCategory[]
 }
 
 /** 分类颜色 */
@@ -18,10 +19,16 @@ const CATEGORY_COLORS = [
  * 月度统计页面
  * 包含：月度概览、饼图（分类占比）、折线图（每日消费趋势）、分类明细
  */
-const StatsPage: React.FC<StatsPageProps> = ({ records, formatAmount }) => {
+const StatsPage: React.FC<StatsPageProps> = ({ records, formatAmount, userCategories = [] }) => {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
+
+  // 合并后的支出分类（预置 + 用户自定义）
+  const mergedExpenseCategories = useMemo(
+    () => mergeCategories(PRIMARY_CATEGORIES, userCategories.filter(c => c.type === 'expense')),
+    [userCategories]
+  )
 
   // 月份切换
   const goPrevMonth = () => {
@@ -38,14 +45,15 @@ const StatsPage: React.FC<StatsPageProps> = ({ records, formatAmount }) => {
   // ===== 当月统计 =====
   const monthStats = useMemo(() => {
     const prefix = `${year}-${String(month).padStart(2, '0')}`
-    const monthRecords = records.filter(r => r.date.startsWith(prefix))
-    const total = monthRecords.reduce((sum, r) => sum + r.amount, 0)
+    // 只取支出记录（统计页面专注支出分析）
+    const expenseRecords = records.filter(r => r.date.startsWith(prefix) && r.type !== 'income')
+    const total = expenseRecords.reduce((sum, r) => sum + r.amount, 0)
 
-    // 饼图数据：按一级分类汇总
-    const pieData = PRIMARY_CATEGORIES
+    // 饼图数据：按一级分类汇总（含用户自定义支出分类）
+    const pieData = mergedExpenseCategories
       .map(cat => {
-        const amt = monthRecords.filter(r => r.primaryCategory === cat.key).reduce((s, r) => s + r.amount, 0)
-        return { name: cat.label, icon: cat.icon, value: amt }
+        const amt = expenseRecords.filter(r => r.primaryCategory === cat.key).reduce((s, r) => s + r.amount, 0)
+        return { name: cat.label, icon: cat.icon, key: cat.key, value: amt }
       })
       .filter(d => d.value > 0)
       .sort((a, b) => b.value - a.value)
@@ -55,18 +63,18 @@ const StatsPage: React.FC<StatsPageProps> = ({ records, formatAmount }) => {
     const lineData: { day: string; 金额: number }[] = []
     for (let d = 1; d <= daysInMon; d++) {
       const dayStr = `${prefix}-${String(d).padStart(2, '0')}`
-      const dayTotal = monthRecords.filter(r => r.date === dayStr).reduce((s, r) => s + r.amount, 0)
+      const dayTotal = expenseRecords.filter(r => r.date === dayStr).reduce((s, r) => s + r.amount, 0)
       lineData.push({ day: `${d}日`, 金额: dayTotal / 100 })
     }
 
     return {
       total,
-      recordCount: monthRecords.length,
-      dailyAvg: monthRecords.length > 0 ? Math.round(total / daysInMon) : 0,
+      recordCount: expenseRecords.length,
+      dailyAvg: expenseRecords.length > 0 ? Math.round(total / daysInMon) : 0,
       pieData,
       lineData
     }
-  }, [records, year, month])
+  }, [records, year, month, mergedExpenseCategories])
 
   const { total, recordCount, dailyAvg, pieData, lineData } = monthStats
 
@@ -110,25 +118,34 @@ const StatsPage: React.FC<StatsPageProps> = ({ records, formatAmount }) => {
           <div className="chart-section">
             <h4 className="section-title">🍩 分类消费占比</h4>
             <div className="chart-container">
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie
                     data={pieData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={110}
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={100}
                     paddingAngle={3}
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={true}
+                    label={({ name, percent }) => {
+                      const shortName = name.length > 4 ? name.slice(0, 4) + '..' : name
+                      return `${shortName} ${(percent * 100).toFixed(0)}%`
+                    }}
+                    labelLine={{ stroke: '#94A3B8', strokeWidth: 1 }}
                   >
                     {pieData.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} stroke="#fff" strokeWidth={2} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatAmount(value * 100)} />
+                  <Legend
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                    formatter={(value: string) => <span style={{ color: '#475569' }}>{value}</span>}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>

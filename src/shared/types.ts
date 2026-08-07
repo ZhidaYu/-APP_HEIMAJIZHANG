@@ -72,3 +72,30 @@ export interface UpdateExpenseInput {
   note?: string
   paymentMethod?: PaymentMethod
 }
+
+// ---------- 用户自定义分类 ----------
+
+/** 用户自定义分类（存储在数据库中） */
+export interface UserCategory {
+  id: string
+  type: RecordType
+  parentKey: string | null    // null = 一级分类，非 null = 所属一级分类的 key
+  key: string                 // 唯一标识（自动生成）
+  label: string               // 显示名称
+  icon: string                // emoji 图标
+  createdAt: string
+}
+
+/** 创建用户分类的输入 */
+export interface CreateUserCategoryInput {
+  type: RecordType
+  parentKey?: string | null   // 不传 = 创建一级分类
+  label: string
+  icon?: string
+}
+
+/** 更新用户分类的输入 */
+export interface UpdateUserCategoryInput {
+  label?: string
+  icon?: string
+}

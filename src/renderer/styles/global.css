@@ -926,3 +926,216 @@ input, select, textarea { font-family: inherit; font-size: inherit; outline: non
   border: 1px solid var(--color-border) !important;
   box-shadow: var(--shadow-md) !important;
 }
+
+/* ========================================
+   分类管理
+   ======================================== */
+
+/* 分类管理专用遮罩 */
+.cm-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; animation: fadeIn 0.2s;
+  padding: 20px; box-sizing: border-box;
+}
+
+.cm-wrapper {
+  max-width: 500px; width: 100%; max-height: 80vh;
+  background: #FFFFFF; border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+.category-manager {
+  display: flex; flex-direction: column;
+  max-height: 80vh;
+  background: #FFFFFF;
+}
+
+.cm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #FFFFFF;
+}
+
+.cm-title { font-size: 16px; font-weight: 700; color: #1E293B; }
+
+.cm-close-btn {
+  width: 32px; height: 32px; border-radius: var(--radius-xs);
+  border: none; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #94A3B8; transition: all 0.15s;
+}
+.cm-close-btn:hover { background: #F1F5F9; color: #1E293B; }
+
+.cm-body {
+  flex: 1; overflow-y: auto; padding: 12px 20px;
+  background: #FFFFFF;
+}
+
+.cm-section { margin-bottom: 20px; }
+
+.cm-section-title {
+  font-size: 13px; font-weight: 700; color: #64748B;
+  margin-bottom: 10px; letter-spacing: 0.3px;
+}
+
+.cm-lock-icon { color: #94A3B8; flex-shrink: 0; }
+
+/* 一级分类卡片 */
+.cm-card {
+  border-radius: var(--radius-sm); margin-bottom: 8px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+}
+
+.cm-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  transition: background 0.15s;
+}
+.cm-card-header.preset { background: #F8FAFC; }
+.cm-card-header.user { background: #F1F5F9; }
+
+.cm-card-icon { font-size: 22px; flex-shrink: 0; }
+.cm-card-label { flex: 1; font-size: 15px; font-weight: 600; color: #1E293B; }
+
+.cm-card-actions { display: flex; gap: 2px; }
+
+/* 二级分类列表 */
+.cm-sub-list {
+  padding: 0;
+}
+
+.cm-sub-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px 8px 30px;
+  border-top: 1px solid #F1F5F9;
+  font-size: 14px; color: #334155; transition: background 0.15s;
+}
+.cm-sub-row.preset { color: #64748B; }
+.cm-sub-row.user { background: #FAFAFA; }
+
+.cm-sub-icon { font-size: 16px; flex-shrink: 0; }
+.cm-sub-label { flex: 1; }
+
+/* 添加小类按钮 */
+.cm-add-sub-btn {
+  width: 100%; padding: 7px; border: none; border-top: 1px dashed #CBD5E1;
+  cursor: pointer; background: transparent; font-size: 13px; font-weight: 500;
+  color: #6366F1; display: flex; align-items: center;
+  justify-content: center; gap: 6px; transition: all 0.2s;
+}
+.cm-add-sub-btn:hover { background: #EEF2FF; color: #4F46E5; }
+
+.cm-action-btn {
+  width: 28px; height: 28px; border-radius: var(--radius-xs);
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  background: transparent; transition: all 0.15s; flex-shrink: 0;
+}
+.cm-action-btn.edit { color: var(--color-primary); }
+.cm-action-btn.edit:hover { background: #EEF2FF; }
+.cm-action-btn.delete { color: #EF4444; }
+.cm-action-btn.delete:hover { background: #FEF2F2; }
+
+.cm-footer {
+  padding: 12px 20px; border-top: 1px solid #E2E8F0;
+  background: #FFFFFF;
+}
+
+.cm-add-btn {
+  width: 100%; padding: 10px; border-radius: var(--radius-sm);
+  border: 2px dashed #CBD5E1; cursor: pointer;
+  background: transparent; font-size: 14px; font-weight: 600;
+  color: #6366F1; display: flex; align-items: center;
+  justify-content: center; gap: 6px;
+  transition: all 0.2s;
+}
+.cm-add-btn:hover { border-color: #6366F1; background: #EEF2FF; }
+
+/* 父分类只读显示 */
+.cm-parent-display {
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  background: var(--color-bg); font-size: 14px; font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* 分类管理表单 */
+
+.cm-form-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10; border-radius: var(--radius-lg);
+}
+
+.cm-form {
+  background: #FFFFFF; border-radius: var(--radius-lg);
+  padding: 20px; max-width: 360px; width: 90%;
+  box-shadow: var(--shadow-lg); animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 90vh; overflow-y: auto;
+}
+
+.cm-form-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 16px;
+}
+
+.cm-form-row { margin-bottom: 14px; }
+.cm-form-label { display: block; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 6px; }
+
+.cm-form-input, .cm-form-select {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border); font-size: 14px;
+  background: var(--color-bg-card); color: var(--color-text);
+  outline: none; transition: border-color 0.2s; box-sizing: border-box;
+}
+.cm-form-input:focus, .cm-form-select:focus { border-color: var(--color-primary); }
+
+.cm-type-toggle { display: flex; gap: 8px; }
+.cm-type-btn {
+  flex: 1; padding: 8px; border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border); cursor: pointer;
+  font-size: 13px; font-weight: 500; background: transparent;
+  color: var(--color-text-secondary); display: flex;
+  align-items: center; justify-content: center; gap: 4px;
+  transition: all 0.2s;
+}
+.cm-type-btn.active {
+  border-color: var(--color-primary); background: #EEF2FF;
+  color: var(--color-primary); font-weight: 600;
+}
+.cm-type-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cm-emoji-grid {
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px;
+}
+.cm-emoji-btn {
+  width: 32px; height: 32px; border-radius: var(--radius-xs);
+  border: 1px solid transparent; cursor: pointer; font-size: 16px;
+  background: transparent; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.cm-emoji-btn:hover { background: var(--color-bg); }
+.cm-emoji-btn.active { border-color: var(--color-primary); background: #EEF2FF; }
+
+.cm-form-error {
+  color: #EF4444; font-size: 13px; margin-bottom: 8px; font-weight: 500;
+}
+
+.cm-form-actions { display: flex; gap: 8px; margin-top: 16px; }
+.cm-form-btn {
+  flex: 1; padding: 10px; border-radius: var(--radius-sm); border: none;
+  cursor: pointer; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.2s;
+}
+.cm-form-btn.cancel { background: var(--color-bg); color: var(--color-text-secondary); }
+.cm-form-btn.cancel:hover { background: var(--color-border); }
+.cm-form-btn.save {
+  background: var(--gradient-primary); color: #FFF;
+  box-shadow: var(--shadow-sm);
+}
+.cm-form-btn.save:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }

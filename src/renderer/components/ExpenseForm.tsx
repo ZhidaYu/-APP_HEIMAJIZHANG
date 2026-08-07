@@ -6,9 +6,11 @@ import type { PaymentMethod, CreateExpenseInput, RecordType } from '../../shared
 
 interface ExpenseFormProps {
   onSubmit: (data: CreateExpenseInput) => void
+  /** 可选：获取合并后分类列表的函数 */
+  getCategories?: (type: import('../../shared/types').RecordType) => import('../../shared/types').PrimaryCategory[]
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, getCategories }) => {
   const [recordType, setRecordType] = useState<RecordType>('expense')
   const [amountText, setAmountText] = useState('')
   const [primaryCategory, setPrimaryCategory] = useState(getCategoriesByType('expense')[0].key)
@@ -19,7 +21,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit }) => {
 
   const handleTypeChange = (newType: RecordType) => {
     setRecordType(newType)
-    const cats = getCategoriesByType(newType)
+    const cats = getCategories ? getCategories(newType) : getCategoriesByType(newType)
     setPrimaryCategory(cats[0].key)
     setSecondaryCategory(cats[0].children[0].key)
   }
@@ -71,7 +73,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit }) => {
         </div>
       </div>
 
-      <CategorySelector recordType={recordType} primaryKey={primaryCategory} secondaryKey={secondaryCategory} onPrimaryChange={setPrimaryCategory} onSecondaryChange={setSecondaryCategory} />
+      <CategorySelector recordType={recordType} primaryKey={primaryCategory} secondaryKey={secondaryCategory} onPrimaryChange={setPrimaryCategory} onSecondaryChange={setSecondaryCategory} getCategories={getCategories} />
 
       <div className="form-row">
         <label className="form-label">📅 日期</label>

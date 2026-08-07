@@ -1,15 +1,23 @@
 import React, { useState } from 'react'
-import { Download, Upload, Trash2, Info } from 'lucide-react'
+import { Download, Upload, Trash2, Info, FolderCog } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
+import CategoryManager from './CategoryManager'
+import type { UserCategory, CreateUserCategoryInput, UpdateUserCategoryInput } from '../../shared/types'
 
 interface SettingsPageProps {
   recordCount: number
   onRefresh: () => void
+  userCategories: UserCategory[]
+  onAddCategory: (input: CreateUserCategoryInput) => Promise<UserCategory | null>
+  onUpdateCategory: (id: string, input: UpdateUserCategoryInput) => Promise<UserCategory | null>
+  onDeleteCategory: (id: string) => Promise<boolean>
+  onRefreshCategories: () => void
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh, userCategories, onAddCategory, onUpdateCategory, onDeleteCategory, onRefreshCategories }) => {
   const [msg, setMsg] = useState<string | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showCategoryManager, setShowCategoryManager] = useState(false)
 
   const showMsg = (text: string) => { setMsg(text); setTimeout(() => setMsg(null), 4000) }
 
@@ -60,6 +68,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh }) =
       </div>
 
       <div className="settings-section">
+        <h4 className="section-title-sm">📂 分类管理</h4>
+        <div className="settings-card">
+          <button className="setting-action" onClick={() => setShowCategoryManager(true)}>
+            <span className="action-icon" style={{ backgroundColor: '#EEF2FF' }}><FolderCog size={20} strokeWidth={1.5} /></span>
+            <div className="action-text"><span className="action-title">管理分类</span><span className="action-desc">新增、编辑或删除自定义分类（预置分类不可修改）</span></div>
+            <span className="action-arrow">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="settings-section">
         <h4 className="section-title-sm">⚠️ 危险操作</h4>
         <div className="settings-card">
           <button className="setting-action danger" onClick={() => setShowClearConfirm(true)}>
@@ -74,6 +93,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ recordCount, onRefresh }) =
 
       {showClearConfirm && (
         <ConfirmDialog title="⚠️ 清空所有数据" message={`确定要删除全部 ${recordCount} 条记账记录吗？此操作不可恢复！`} confirmText="确认清空" cancelText="取消" onConfirm={handleClearConfirm} onCancel={() => setShowClearConfirm(false)} danger />
+      )}
+
+      {showCategoryManager && (
+        <div className="cm-backdrop" onClick={() => setShowCategoryManager(false)}>
+          <div className="cm-wrapper" onClick={e => e.stopPropagation()}>
+            <CategoryManager
+              expenseUserCats={userCategories.filter(c => c.type === 'expense')}
+              incomeUserCats={userCategories.filter(c => c.type === 'income')}
+              onAdd={onAddCategory}
+              onUpdate={onUpdateCategory}
+              onDelete={onDeleteCategory}
+              onClose={() => { setShowCategoryManager(false); onRefreshCategories() }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

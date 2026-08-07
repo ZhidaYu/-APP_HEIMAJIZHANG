@@ -9,7 +9,7 @@
  * 3. 修改后同步更新 CLAUDE.md 中的分类表
  */
 
-import type { PrimaryCategory, SubCategory, PaymentOption, RecordType } from './types'
+import type { PrimaryCategory, SubCategory, PaymentOption, RecordType, UserCategory } from './types'
 
 /** 一级分类 + 二级分类完整数据 */
 export const PRIMARY_CATEGORIES: PrimaryCategory[] = [
@@ -235,13 +235,13 @@ export function getCategoryDisplay(primaryKey: string, subKey: string): string {
   for (const cat of PRIMARY_CATEGORIES) {
     if (cat.key === primaryKey) {
       const sub = cat.children.find(s => s.key === subKey)
-      return sub ? `${cat.label} > ${sub.label}` : `${cat.label} > ?`
+      return sub ? `${cat.label} > ${sub.label}` : cat.label
     }
   }
   for (const cat of INCOME_CATEGORIES) {
     if (cat.key === primaryKey) {
       const sub = cat.children.find(s => s.key === subKey)
-      return sub ? `${cat.label} > ${sub.label}` : `${cat.label} > ?`
+      return sub ? `${cat.label} > ${sub.label}` : cat.label
     }
   }
   console.warn('[categories] 未找到分类:', primaryKey, subKey)
@@ -265,4 +265,50 @@ export const CATEGORY_COLORS: Record<string, string> = {
 /** 获取一级分类的颜色 */
 export function getCategoryColor(primaryKey: string): string {
   return CATEGORY_COLORS[primaryKey] || '#6B7280'
+}
+
+// ---------- 用户自定义分类合并 ----------
+
+/** 将预设分类和用户自定义分类合并为完整的分类列表 */
+export function mergeCategories(
+  presets: PrimaryCategory[],
+  userCategories: UserCategory[]
+): PrimaryCategory[] {
+  // 深拷贝预设分类
+  const merged: PrimaryCategory[] = presets.map(p => ({
+    ...p,
+    children: [...p.children]
+  }))
+
+  // 1. 先处理一级用户分类（parentKey = null）
+  const primaryUserCats = userCategories.filter(c => c.parentKey === null)
+  for (const uc of primaryUserCats) {
+    merged.push({
+      key: uc.key,
+      label: uc.label,
+      icon: uc.icon,
+      children: []
+    })
+  }
+
+  // 2. 处理二级用户分类（parentKey 有值）
+  const secondaryUserCats = userCategories.filter(c => c.parentKey !== null)
+  for (const uc of secondaryUserCats) {
+    // 在 merged 中查找对应的一级分类（可能是预设或用户创建的）
+    const primary = merged.find(p => p.key === uc.parentKey)
+    if (primary) {
+      primary.children.push({
+        key: uc.key,
+        label: uc.label,
+        description: `自定义：${uc.label}`
+      })
+    }
+  }
+
+  return merged
+}
+
+/** 检查分类 key 是否为用户自定义的（以 user_ 开头） */
+export function isUserCategoryKey(key: string): boolean {
+  return key.startsWith('user_')
 }

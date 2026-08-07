@@ -11,10 +11,14 @@ import {
   updateExpense,
   deleteExpense,
   clearAllExpenses,
-  getMonthTotal
+  getMonthTotal,
+  getUserCategories,
+  addUserCategory,
+  updateUserCategory,
+  deleteUserCategory
 } from './database'
 import { getCategoryDisplay, PRIMARY_CATEGORIES, INCOME_CATEGORIES } from '../shared/categories'
-import type { CreateExpenseInput, UpdateExpenseInput, ExpenseRecord, PaymentMethod, RecordType } from '../shared/types'
+import type { CreateExpenseInput, UpdateExpenseInput, ExpenseRecord, PaymentMethod, RecordType, CreateUserCategoryInput, UpdateUserCategoryInput, UserCategory } from '../shared/types'
 
 /** 注册所有 IPC 处理器 */
 export function registerIpcHandlers(): void {
@@ -46,6 +50,28 @@ export function registerIpcHandlers(): void {
   // 清空所有记录
   ipcMain.handle('expense:clearAll', async (): Promise<number> => {
     return clearAllExpenses()
+  })
+
+  // ===== 用户自定义分类 =====
+
+  ipcMain.handle('category:getAll', async (): Promise<UserCategory[]> => {
+    return getUserCategories()
+  })
+
+  ipcMain.handle('category:add', async (_event, input: CreateUserCategoryInput): Promise<UserCategory> => {
+    return addUserCategory(input)
+  })
+
+  ipcMain.handle('category:update', async (_event, id: string, input: UpdateUserCategoryInput): Promise<UserCategory | null> => {
+    // 保护：只允许修改用户创建的分类（id 以 user_ 开头）
+    if (!id.startsWith('user_')) return null
+    return updateUserCategory(id, input)
+  })
+
+  ipcMain.handle('category:delete', async (_event, id: string): Promise<boolean> => {
+    // 保护：只允许删除用户创建的分类（id 以 user_ 开头）
+    if (!id.startsWith('user_')) return false
+    return deleteUserCategory(id)
   })
 
   // ===== CSV 导出 =====
@@ -269,18 +295,46 @@ function parseCsvLine(line: string): string[] {
   return result
 }
 
-/** 构建中文 label → key 的映射（包含支出和收入分类） */
+/** 构建中文 label → key 的映射（包含支出和收入分类 + 用户自定义分类） */
 function buildKeyMap(): Record<string, string> {
   const map: Record<string, string> = {}
+  // 预置分类
   for (const cat of [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES]) {
     map[cat.label] = cat.key
   }
+  // 用户自定义分类（只在有数据库连接时）
+  try {
+    const { getUserCategories } = require('./database')
+    const userCats = getUserCategories()
+    for (const uc of userCats) {
+      if (uc.parentKey === null) {
+        map[uc.label] = uc.key
+      }
+    }
+  } catch { /* 忽略 */ }
   return map
 }
 
-/** 根据中文 label 查找二级分类的 key */
+/** 根据中文 label 查找二级分类的 key（含用户自定义分类） */
 function findSecondaryKey(primaryKey: string, secondaryLabel: string): string | undefined {
-  const allCats = [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES]
+  // 先查预置分类
+  let allCats = [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES]
+  // 合并用户一级分类（只在有数据库连接时）
+  try {
+    const { getUserCategories } = require('./database')
+    const userCats = getUserCategories()
+    const userPrimaries = userCats.filter((c: any) => c.parentKey === null)
+    allCats = [...allCats, ...userPrimaries.map((c: any) => ({ key: c.key, label: c.label, children: [] }))]
+    // 找二级分类时也包含用户二级分类
+    const cat = allCats.find(c => c.key === primaryKey)
+    if (cat) {
+      const userSubs = userCats.filter((c: any) => c.parentKey === primaryKey)
+      const sub = [...(cat.children || []), ...userSubs.map((c: any) => ({ key: c.key, label: c.label }))]
+        .find((s: any) => s.label === secondaryLabel)
+      if (sub) return sub.key
+    }
+  } catch { /* 忽略 */ }
+
   const cat = allCats.find(c => c.key === primaryKey)
   if (!cat) return undefined
   const sub = cat.children.find(s => s.label === secondaryLabel)

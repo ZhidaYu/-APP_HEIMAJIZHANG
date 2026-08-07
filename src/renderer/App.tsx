@@ -15,7 +15,7 @@ const App: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(null)
   const [monthTotal, setMonthTotal] = useState(0)
 
-  const { records, loading, addExpense, updateExpense, deleteExpense, refreshRecords, formatAmount, getMonthTotal } = useExpenses()
+  const { records, loading, addExpense, updateExpense, deleteExpense, refreshRecords, formatAmount, getMonthTotal, userCategories, addUserCategory, updateUserCategory, deleteUserCategory, getMergedCategories, refreshUserCategories } = useExpenses()
 
   useEffect(() => {
     const now = new Date()
@@ -55,10 +55,10 @@ const App: React.FC = () => {
         ) : (
           <div className="page-container" key={activeTab}>
             <div className="page-slide-in">
-              {activeTab === 'home' && <ExpenseForm onSubmit={handleAddExpense} />}
-              {activeTab === 'records' && <ExpenseList records={records} formatAmount={formatAmount} onEdit={setEditingRecord} onDelete={deleteExpense} onRefresh={refreshRecords} />}
-              {activeTab === 'stats' && <StatsPage records={records} formatAmount={formatAmount} />}
-              {activeTab === 'settings' && <SettingsPage recordCount={records.length} onRefresh={refreshRecords} />}
+              {activeTab === 'home' && <ExpenseForm onSubmit={handleAddExpense} getCategories={getMergedCategories} />}
+              {activeTab === 'records' && <ExpenseList records={records} formatAmount={formatAmount} onEdit={setEditingRecord} onDelete={deleteExpense} onRefresh={refreshRecords} userCategories={userCategories} />}
+              {activeTab === 'stats' && <StatsPage records={records} formatAmount={formatAmount} userCategories={userCategories} />}
+              {activeTab === 'settings' && <SettingsPage recordCount={records.length} onRefresh={refreshRecords} userCategories={userCategories} onAddCategory={addUserCategory} onUpdateCategory={updateUserCategory} onDeleteCategory={deleteUserCategory} onRefreshCategories={refreshUserCategories} />}
             </div>
           </div>
         )}
@@ -85,7 +85,7 @@ const App: React.FC = () => {
       </nav>
 
       {editingRecord && (
-        <EditModal record={editingRecord} onClose={() => setEditingRecord(null)} onSave={handleEditSave} formatAmount={formatAmount} />
+        <EditModal record={editingRecord} onClose={() => setEditingRecord(null)} onSave={handleEditSave} formatAmount={formatAmount} getCategories={getMergedCategories} />
       )}
     </div>
   )

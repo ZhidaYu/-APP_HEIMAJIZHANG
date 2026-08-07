@@ -6,7 +6,7 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
-import type { ExpenseRecord, CreateExpenseInput, UpdateExpenseInput, RecordType } from '../shared/types'
+import type { ExpenseRecord, CreateExpenseInput, UpdateExpenseInput, RecordType, UserCategory, CreateUserCategoryInput, UpdateUserCategoryInput } from '../shared/types'
 
 const DB_PATH = join(app.getPath('userData'), 'heima-accounting.db')
 let db: Database.Database | null = null
@@ -43,6 +43,19 @@ export function getDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
     CREATE INDEX IF NOT EXISTS idx_expenses_primary ON expenses(primary_category);
     CREATE INDEX IF NOT EXISTS idx_expenses_type ON expenses(type);
+  `)
+
+  // 用户自定义分类表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_categories (
+      id          TEXT PRIMARY KEY,
+      type        TEXT NOT NULL,
+      parent_key  TEXT,
+      key         TEXT NOT NULL UNIQUE,
+      label       TEXT NOT NULL,
+      icon        TEXT DEFAULT '📋',
+      created_at  TEXT NOT NULL
+    )
   `)
 
   return db
@@ -137,6 +150,66 @@ export function getMonthTotal(year: number, month: number, type?: RecordType): n
   return row.total
 }
 
+// ============ 用户自定义分类操作 ============
+
+/** 获取所有用户自定义分类 */
+export function getUserCategories(): UserCategory[] {
+  const rows = getDatabase().prepare(
+    `SELECT * FROM user_categories ORDER BY created_at ASC`
+  ).all() as any[]
+  return rows.map(rowToUserCategory)
+}
+
+/** 新增用户分类 */
+export function addUserCategory(input: CreateUserCategoryInput): UserCategory {
+  const db = getDatabase()
+  const id = `user_${Date.now().toString(36)}`
+  const key = input.parentKey
+    ? `user_sub_${Date.now().toString(36)}`
+    : `user_${Date.now().toString(36)}`
+  const now = new Date().toISOString()
+  const icon = input.icon || '📋'
+
+  db.prepare(`
+    INSERT INTO user_categories (id, type, parent_key, key, label, icon, created_at)
+    VALUES (@id, @type, @parentKey, @key, @label, @icon, @createdAt)
+  `).run({
+    id, type: input.type,
+    parentKey: input.parentKey || null,
+    key, label: input.label, icon,
+    createdAt: now
+  })
+
+  return { id, type: input.type, parentKey: input.parentKey || null, key, label: input.label, icon, createdAt: now }
+}
+
+/** 更新用户分类（仅允许修改 label 和 icon） */
+export function updateUserCategory(id: string, input: UpdateUserCategoryInput): UserCategory | null {
+  const db = getDatabase()
+  const existing = db.prepare('SELECT * FROM user_categories WHERE id = ?').get(id) as any
+  if (!existing) return null
+
+  const label = input.label !== undefined ? input.label : existing.label
+  const icon = input.icon !== undefined ? input.icon : existing.icon
+
+  db.prepare(`UPDATE user_categories SET label = @label, icon = @icon WHERE id = @id`).run({ label, icon, id })
+  return rowToUserCategory(db.prepare('SELECT * FROM user_categories WHERE id = ?').get(id) as any)
+}
+
+/** 删除用户分类（一级分类级联删除子分类） */
+export function deleteUserCategory(id: string): boolean {
+  const db = getDatabase()
+  const cat = db.prepare('SELECT * FROM user_categories WHERE id = ?').get(id) as any
+  if (!cat) return false
+
+  // 如果是一级分类，同时删除其下所有二级分类
+  if (!cat.parent_key) {
+    db.prepare('DELETE FROM user_categories WHERE parent_key = ?').run(cat.key)
+  }
+  const result = db.prepare('DELETE FROM user_categories WHERE id = ?').run(id)
+  return result.changes > 0
+}
+
 // ============ 辅助 ============
 
 function generateId(): string {
@@ -155,5 +228,17 @@ function rowToRecord(row: any): ExpenseRecord {
     paymentMethod: row.payment_method,
     createdAt: row.created_at,
     updatedAt: row.updated_at
+  }
+}
+
+function rowToUserCategory(row: any): UserCategory {
+  return {
+    id: row.id,
+    type: row.type,
+    parentKey: row.parent_key || null,
+    key: row.key,
+    label: row.label,
+    icon: row.icon || '📋',
+    createdAt: row.created_at
   }
 }

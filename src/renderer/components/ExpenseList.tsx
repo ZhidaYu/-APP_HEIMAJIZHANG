@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
-import type { ExpenseRecord } from '../../shared/types'
-import { getCategoryColorByType, PRIMARY_CATEGORIES, INCOME_CATEGORIES } from '../../shared/categories'
+import type { ExpenseRecord, UserCategory } from '../../shared/types'
+import { getCategoryColorByType, PRIMARY_CATEGORIES, INCOME_CATEGORIES, mergeCategories } from '../../shared/categories'
 import ConfirmDialog from './ConfirmDialog'
 
 interface ExpenseListProps {
@@ -9,9 +9,10 @@ interface ExpenseListProps {
   onEdit: (record: ExpenseRecord) => void
   onDelete: (id: string) => void
   onRefresh: () => void
+  userCategories?: UserCategory[]
 }
 
-const ExpenseList: React.FC<ExpenseListProps> = ({ records, formatAmount, onEdit, onDelete, onRefresh }) => {
+const ExpenseList: React.FC<ExpenseListProps> = ({ records, formatAmount, onEdit, onDelete, onRefresh, userCategories = [] }) => {
   // 筛选：null=全部, 'expense'=仅支出, 'income'=仅收入, string=一级分类key
   const [filterType, setFilterType] = useState<string | null>(null)
   const [filterPrimary, setFilterPrimary] = useState<string | null>(null)
@@ -32,15 +33,38 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ records, formatAmount, onEdit
   const groupedByDate = groupByDate(filteredRecords)
   const filteredTotal = useMemo(() => filteredRecords.reduce((sum, r) => sum + r.amount, 0), [filteredRecords])
 
-  // 合并支出+收入分类用于筛选
-  const allCategories = useMemo(() => {
-    const expenseKeys = new Set(PRIMARY_CATEGORIES.map(c => c.key))
-    return [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES.filter(c => !expenseKeys.has(c.key))]
-  }, [])
+  // 合并后的分类（按类型分开）
+  const mergedExpenseCats = useMemo(
+    () => mergeCategories(PRIMARY_CATEGORIES, userCategories.filter(c => c.type === 'expense')),
+    [userCategories]
+  )
+  const mergedIncomeCats = useMemo(
+    () => mergeCategories(INCOME_CATEGORIES, userCategories.filter(c => c.type === 'income')),
+    [userCategories]
+  )
 
-  const selectedPrimary = filterPrimary ? allCategories.find(c => c.key === filterPrimary) : null
+  // 第二行分类筛选：根据 filterType 显示对应的分类
+  const visibleCategories = useMemo(() => {
+    if (filterType === 'expense') return mergedExpenseCats
+    if (filterType === 'income') return mergedIncomeCats
+    return [...mergedExpenseCats, ...mergedIncomeCats]
+  }, [filterType, mergedExpenseCats, mergedIncomeCats])
+
+  const selectedPrimary = filterPrimary ? visibleCategories.find(c => c.key === filterPrimary) : null
 
   const handlePrimaryFilter = (key: string | null) => { setFilterPrimary(key); setFilterSecondary(null) }
+
+  const handleTypeFilter = (type: string | null) => {
+    setFilterType(type)
+    // 切换类型时，如果当前选中的一级分类不在新类型中，重置
+    if (filterPrimary) {
+      const cats = type === 'expense' ? mergedExpenseCats : type === 'income' ? mergedIncomeCats : [...mergedExpenseCats, ...mergedIncomeCats]
+      if (!cats.find(c => c.key === filterPrimary)) {
+        setFilterPrimary(null)
+        setFilterSecondary(null)
+      }
+    }
+  }
 
   const handleDeleteClick = (id: string) => setDeleteTarget(id)
   const handleDeleteConfirm = () => { if (deleteTarget) { onDelete(deleteTarget) } setDeleteTarget(null) }
@@ -49,14 +73,37 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ records, formatAmount, onEdit
   const expenseTotal = filteredRecords.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0)
   const incomeTotal = filteredRecords.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0)
 
+  // 合并所有分类（仅用于显示查找）
+  const allMergedForDisplay = useMemo(
+    () => [...mergedExpenseCats, ...mergedIncomeCats],
+    [mergedExpenseCats, mergedIncomeCats]
+  )
+
+  // 分类显示：搜索合并后的分类列表
+  const getDisplaySafe = (primaryKey: string, subKey: string): string => {
+    const primary = allMergedForDisplay.find(c => c.key === primaryKey)
+    if (primary) {
+      const sub = primary.children.find(s => s.key === subKey)
+      // 有二级分类就显示 "一级 > 二级"，没有就只显示一级名称
+      return sub ? `${primary.label} > ${sub.label}` : primary.label
+    }
+    // 兜底：直接搜用户分类
+    const userPri = userCategories.find(c => c.parentKey === null && c.key === primaryKey)
+    if (userPri) {
+      const userSub = userCategories.find(c => c.parentKey === primaryKey && c.key === subKey)
+      return userSub ? `${userPri.label} > ${userSub.label}` : userPri.label
+    }
+    return '未知分类'
+  }
+
   return (
     <div className="expense-list">
       {/* 收支类型筛选 */}
       <div className="filter-bar">
         <div className="filter-scroll">
-          <button className={`filter-chip ${!filterType ? 'active' : ''}`} onClick={() => setFilterType(null)}>全部</button>
-          <button className={`filter-chip expense-filter ${filterType === 'expense' ? 'active' : ''}`} onClick={() => setFilterType('expense')}>💸 支出</button>
-          <button className={`filter-chip income-filter ${filterType === 'income' ? 'active' : ''}`} onClick={() => setFilterType('income')}>💰 收入</button>
+          <button className={`filter-chip ${!filterType ? 'active' : ''}`} onClick={() => handleTypeFilter(null)}>全部</button>
+          <button className={`filter-chip expense-filter ${filterType === 'expense' ? 'active' : ''}`} onClick={() => handleTypeFilter('expense')}>💸 支出</button>
+          <button className={`filter-chip income-filter ${filterType === 'income' ? 'active' : ''}`} onClick={() => handleTypeFilter('income')}>💰 收入</button>
         </div>
       </div>
 
@@ -64,7 +111,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ records, formatAmount, onEdit
       <div className="filter-bar">
         <div className="filter-scroll">
           <button className={`filter-chip ${!filterPrimary ? 'active' : ''}`} onClick={() => handlePrimaryFilter(null)}>全部分类</button>
-          {allCategories.map(cat => (
+          {visibleCategories.map(cat => (
             <button key={cat.key} className={`filter-chip ${filterPrimary === cat.key ? 'active' : ''}`} onClick={() => handlePrimaryFilter(cat.key)}>
               {cat.icon} {cat.label}
             </button>
@@ -110,7 +157,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ records, formatAmount, onEdit
                   <div className="item-dot" style={{ backgroundColor: getCategoryColorByType(record.type, record.primaryCategory) }} />
                   <div className="item-left">
                     <span className="item-category">
-                      {getDisplaySafe(record.primaryCategory, record.secondaryCategory, record.type)}
+                      {getDisplaySafe(record.primaryCategory, record.secondaryCategory)}
                     </span>
                     {record.note && <span className="item-note">{record.note}</span>}
                   </div>
@@ -160,21 +207,5 @@ function formatDateHeader(dateStr: string): string {
 }
 function getTodayStr(): string { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}` }
 function getYesterdayStr(): string { const y = new Date(Date.now()-86400000); return `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}` }
-
-/** 安全版分类显示：直接查两个分类列表，不依赖外部函数 */
-function getDisplaySafe(primaryKey: string, subKey: string, type: string): string {
-  const allCats = [...PRIMARY_CATEGORIES, ...INCOME_CATEGORIES]
-  const primary = allCats.find(c => c.key === primaryKey)
-  if (!primary) {
-    console.warn('[ExpenseList] 未找到一级分类:', primaryKey, 'type:', type, '可用:', allCats.map(c => c.key))
-    return '未知分类'
-  }
-  const sub = primary.children.find(s => s.key === subKey)
-  if (!sub) {
-    console.warn('[ExpenseList] 未找到二级分类:', primaryKey, subKey, '可用子类:', primary.children.map(s => s.key))
-    return `${primary.label} > ?`
-  }
-  return `${primary.label} > ${sub.label}`
-}
 
 export default ExpenseList

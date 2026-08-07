@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ExpenseRecord, CreateExpenseInput, UpdateExpenseInput } from '../../shared/types'
-import { getCategoryDisplay } from '../../shared/categories'
+import type { ExpenseRecord, CreateExpenseInput, UpdateExpenseInput, UserCategory, CreateUserCategoryInput, UpdateUserCategoryInput, RecordType } from '../../shared/types'
+import { getCategoryDisplay, mergeCategories, PRIMARY_CATEGORIES, INCOME_CATEGORIES } from '../../shared/categories'
+import type { PrimaryCategory } from '../../shared/types'
 
 /**
  * 支出记录管理 Hook
@@ -10,7 +11,18 @@ import { getCategoryDisplay } from '../../shared/categories'
  */
 export function useExpenses() {
   const [records, setRecords] = useState<ExpenseRecord[]>([])
+  const [userCategories, setUserCategories] = useState<UserCategory[]>([])
   const [loading, setLoading] = useState(true)
+
+  // 加载用户自定义分类
+  const loadUserCategories = useCallback(async () => {
+    try {
+      const cats = await window.electronAPI.getUserCategories()
+      setUserCategories(cats)
+    } catch (err) {
+      console.error('加载用户分类失败:', err)
+    }
+  }, [])
 
   // 初始化：从数据库加载记录，并迁移旧数据
   const loadRecords = useCallback(async () => {
@@ -29,6 +41,8 @@ export function useExpenses() {
         await migrateOldData()
         // 2. 从 SQLite 数据库加载
         await loadRecords()
+        // 3. 加载用户自定义分类
+        await loadUserCategories()
       } catch (err) {
         console.error('初始化数据失败:', err)
       } finally {
@@ -36,7 +50,7 @@ export function useExpenses() {
       }
     }
     init()
-  }, [loadRecords])
+  }, [loadRecords, loadUserCategories])
 
   /** 添加一笔支出 */
   const addExpense = useCallback(async (input: CreateExpenseInput): Promise<ExpenseRecord | null> => {
@@ -93,6 +107,55 @@ export function useExpenses() {
     }
   }, [records])
 
+  // ===== 用户自定义分类操作 =====
+
+  /** 新增用户分类 */
+  const addUserCategoryFn = useCallback(async (input: CreateUserCategoryInput): Promise<UserCategory | null> => {
+    try {
+      const cat = await window.electronAPI.addUserCategory(input)
+      setUserCategories(prev => [...prev, cat])
+      return cat
+    } catch (err) {
+      console.error('添加用户分类失败:', err)
+      return null
+    }
+  }, [])
+
+  /** 更新用户分类 */
+  const updateUserCategoryFn = useCallback(async (id: string, input: UpdateUserCategoryInput): Promise<UserCategory | null> => {
+    try {
+      const updated = await window.electronAPI.updateUserCategory(id, input)
+      if (updated) {
+        setUserCategories(prev => prev.map(c => c.id === id ? updated : c))
+      }
+      return updated
+    } catch (err) {
+      console.error('更新用户分类失败:', err)
+      return null
+    }
+  }, [])
+
+  /** 删除用户分类 */
+  const deleteUserCategoryFn = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const ok = await window.electronAPI.deleteUserCategory(id)
+      if (ok) {
+        setUserCategories(prev => prev.filter(c => c.id !== id))
+      }
+      return ok
+    } catch (err) {
+      console.error('删除用户分类失败:', err)
+      return false
+    }
+  }, [])
+
+  /** 获取合并后的分类列表（预设 + 用户自定义） */
+  const getMergedCategories = useCallback((type: RecordType): PrimaryCategory[] => {
+    const presets = type === 'expense' ? PRIMARY_CATEGORIES : INCOME_CATEGORIES
+    const filtered = userCategories.filter(c => c.type === type)
+    return mergeCategories(presets, filtered)
+  }, [userCategories])
+
   /** 格式化金额显示 */
   const formatAmount = useCallback((amountInCents: number): string => {
     return `¥${(amountInCents / 100).toFixed(2)}`
@@ -105,6 +168,7 @@ export function useExpenses() {
 
   return {
     records,
+    userCategories,
     loading,
     addExpense,
     deleteExpense,
@@ -113,7 +177,12 @@ export function useExpenses() {
     filterByPrimary,
     getMonthTotal,
     formatAmount,
-    getCategoryLabel
+    getCategoryLabel,
+    addUserCategory: addUserCategoryFn,
+    updateUserCategory: updateUserCategoryFn,
+    deleteUserCategory: deleteUserCategoryFn,
+    getMergedCategories,
+    refreshUserCategories: loadUserCategories
   }
 }
 

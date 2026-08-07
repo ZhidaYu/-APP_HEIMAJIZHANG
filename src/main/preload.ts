@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CreateExpenseInput, UpdateExpenseInput, ExpenseRecord } from '../shared/types'
+import type { CreateExpenseInput, UpdateExpenseInput, ExpenseRecord, CreateUserCategoryInput, UpdateUserCategoryInput, UserCategory } from '../shared/types'
 
 /**
  * Preload 脚本
@@ -51,5 +51,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** 清空所有记账记录 */
   clearAll: (): Promise<number> => {
     return ipcRenderer.invoke('expense:clearAll')
+  },
+
+  // ===== 用户自定义分类 =====
+
+  /** 获取所有用户自定义分类 */
+  getUserCategories: (): Promise<UserCategory[]> => {
+    return ipcRenderer.invoke('category:getAll')
+  },
+
+  /** 新增用户分类 */
+  addUserCategory: (input: CreateUserCategoryInput): Promise<UserCategory> => {
+    return ipcRenderer.invoke('category:add', input)
+  },
+
+  /** 更新用户分类（仅 label 和 icon） */
+  updateUserCategory: (id: string, input: UpdateUserCategoryInput): Promise<UserCategory | null> => {
+    return ipcRenderer.invoke('category:update', id, input)
+  },
+
+  /** 删除用户分类 */
+  deleteUserCategory: (id: string): Promise<boolean> => {
+    return ipcRenderer.invoke('category:delete', id)
   }
 })
