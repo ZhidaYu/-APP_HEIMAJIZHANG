@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Pencil, ArrowDownCircle, ArrowUpCircle, X } from 'lucide-react'
 import CategorySelector from './CategorySelector'
 import { PAYMENT_METHODS, getCategoriesByType } from '../../shared/categories'
+import { getTodayStr } from '../../shared/utils'
 import type { ExpenseRecord, PaymentMethod, UpdateExpenseInput, RecordType } from '../../shared/types'
 
 interface EditModalProps {
@@ -85,7 +86,5 @@ const EditModal: React.FC<EditModalProps> = ({ record, onClose, onSave, formatAm
     </div>
   )
 }
-
-function getTodayStr(): string { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}` }
 
 export default EditModal

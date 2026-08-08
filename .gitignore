@@ -24,3 +24,7 @@ Thumbs.db
 
 # 测试临时文件
 test-main.js
+
+# 质量门禁通行证（gitcommit-agent 自动签发和销毁，不提交到 git）
+tester-result.txt
+quality-result.txt

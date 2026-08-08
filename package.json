@@ -10,7 +10,9 @@
     "package:win": "node scripts/build.js && electron-builder --win",
     "package:mac": "node scripts/build.js && electron-builder --mac",
     "package:all": "node scripts/build.js && electron-builder --win --mac",
-    "package:win-portable": "node scripts/build.js && electron-builder --win --config.win.target=portable"
+    "package:win-portable": "node scripts/build.js && electron-builder --win --config.win.target=portable",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "author": "",
   "license": "MIT",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^4.7.0",
@@ -31,7 +34,8 @@
     "electron-rebuild": "^3.2.9",
     "electron-vite": "^3.1.0",
     "typescript": "^7.0.2",
-    "vite": "^6.4.3"
+    "vite": "^6.4.3",
+    "vitest": "^4.1.10"
   },
   "build": {
     "appId": "com.heima.accounting",

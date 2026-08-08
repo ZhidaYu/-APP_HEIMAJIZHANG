@@ -4,6 +4,15 @@
       "Bash(conda run *)",
       "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" run *)",
       "Bash(rm -rf out)",
+      "Bash(rm -f tester-result.txt quality-result.txt)",
+      "Bash(bash scripts/check-quality-gate.sh)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npx.cmd\" vitest run *)",
       "Bash(timeout 15 \"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" run dev)",
       "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" ls *)",
       "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npx.cmd\" electron *)",
@@ -26,6 +35,21 @@
       "Bash(node -e \"const p = require\\('electron-vite/package.json'\\); console.log\\('main:', p.main\\); console.log\\('exports:', JSON.stringify\\(p.exports, null, 2\\)\\);\")",
       "Bash(\"C:/Users/16214/.conda/envs/heima-accounting/npx.cmd\" electron-rebuild *)",
       "Bash(timeout 12 \"C:/Users/16214/.conda/envs/heima-accounting/npm.cmd\" run dev)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"d:/bili_heima_vibecoding/黑马记账 APP/scripts/check-quality-gate.sh\" 1>&2",
+            "if": "Bash(git commit:*)",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { ArrowDownCircle, ArrowUpCircle, PlusCircle } from 'lucide-react'
 import CategorySelector from './CategorySelector'
 import { PAYMENT_METHODS, getCategoriesByType } from '../../shared/categories'
+import { getTodayStr } from '../../shared/utils'
 import type { PaymentMethod, CreateExpenseInput, RecordType } from '../../shared/types'
 
 interface ExpenseFormProps {
@@ -102,7 +103,5 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, getCategories }) =>
     </div>
   )
 }
-
-function getTodayStr(): string { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}` }
 
 export default ExpenseForm

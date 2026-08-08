@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import type { ExpenseRecord, UserCategory } from '../../shared/types'
 import { getCategoryColorByType, PRIMARY_CATEGORIES, INCOME_CATEGORIES, mergeCategories } from '../../shared/categories'
+import { getTodayStr, getYesterdayStr } from '../../shared/utils'
 import ConfirmDialog from './ConfirmDialog'
 
 interface ExpenseListProps {
@@ -205,7 +206,5 @@ function formatDateHeader(dateStr: string): string {
   const [y, m, d] = dateStr.split('-')
   return `${y}年${parseInt(m)}月${parseInt(d)}日`
 }
-function getTodayStr(): string { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}` }
-function getYesterdayStr(): string { const y = new Date(Date.now()-86400000); return `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}` }
 
 export default ExpenseList
